@@ -36,14 +36,16 @@ export default function CrmSection({
   const [remDue, setRemDue] = useState("");
   const [err, setErr] = useState<string | null>(null);
 
-  const act = async (fn: () => Promise<unknown>) => {
+  const act = async (fn: () => Promise<unknown>): Promise<boolean> => {
     setBusy(true);
     setErr(null);
     try {
       await fn();
       reload();
+      return true;
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Action failed");
+      return false;
     } finally {
       setBusy(false);
     }
@@ -58,29 +60,31 @@ export default function CrmSection({
       }),
     );
 
-  const addNote = () => {
+  const addNote = async () => {
     if (!noteDraft.trim()) return;
-    act(() =>
+    const ok = await act(() =>
       fetchJson(`/api/businesses/${businessId}/notes`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ content: noteDraft.trim() }),
       }),
-    ).then(() => setNoteDraft(""));
+    );
+    if (ok) setNoteDraft(""); // keep the draft if the save failed
   };
 
-  const addReminder = () => {
+  const addReminder = async () => {
     if (!remNote.trim() || !remDue) return;
-    act(() =>
+    const ok = await act(() =>
       fetchJson(`/api/businesses/${businessId}/reminders`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ note: remNote.trim(), due_at: remDue }),
       }),
-    ).then(() => {
+    );
+    if (ok) {
       setRemNote("");
       setRemDue("");
-    });
+    }
   };
 
   const openReminders = reminders.filter((r) => !r.completed_at);
