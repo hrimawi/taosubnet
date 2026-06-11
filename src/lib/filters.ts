@@ -54,12 +54,15 @@ export function applyFilters<T>(query: T, f: BusinessFilters): T {
   if (f.minReviews != null) q = q.gte("review_count", f.minReviews);
   if (f.minRevenue != null) q = q.gte("revenue_estimate", f.minRevenue);
   if (f.stage) {
-    // "active" = anything that has entered the pipeline and isn't closed.
     if (f.stage === "active") {
+      // In the pipeline and not yet closed either way.
       q = q
         .neq("pipeline_stage", "not_contacted")
         .neq("pipeline_stage", "closed_won")
         .neq("pipeline_stage", "closed_lost");
+    } else if (f.stage === "pipeline") {
+      // Everything that has ever been worked (the pipeline export view).
+      q = q.neq("pipeline_stage", "not_contacted");
     } else {
       q = q.eq("pipeline_stage", f.stage);
     }
@@ -101,4 +104,5 @@ export const LIST_COLUMNS = [
   "estimated_contract_value",
   "expected_monthly_value",
   "website_quality",
+  "pipeline_stage",
 ].join(",");

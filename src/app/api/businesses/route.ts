@@ -28,11 +28,7 @@ export async function GET(req: NextRequest) {
     const sortCol = SORT_COLUMNS[sp.get("sort") ?? ""] ?? "expected_monthly_value";
     const ascending = sp.get("dir") === "asc";
 
-    let query = getDb()
-      .from("businesses")
-      .select(LIST_COLUMNS + (sp.get("withStage") ? ",pipeline_stage" : ""), {
-        count: "exact",
-      });
+    let query = getDb().from("businesses").select(LIST_COLUMNS, { count: "exact" });
     query = applyFilters(query, filters);
 
     const { data, error, count } = await query

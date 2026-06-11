@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import CrmSection from "./CrmSection";
 import { fetchJson } from "@/lib/fetcher";
 import { industryLabel } from "@/lib/config/industries";
 import {
@@ -9,7 +10,7 @@ import {
   SCORE_TEXT_CLASS,
   scoreBand,
 } from "@/lib/format";
-import type { Business, ScoreFactor } from "@/lib/types";
+import type { Activity, Business, Note, Reminder, ScoreFactor } from "@/lib/types";
 
 /**
  * Slide-over detail panel. Opens when a map pin / leaderboard row / table row
@@ -19,6 +20,15 @@ import type { Business, ScoreFactor } from "@/lib/types";
 interface Props {
   businessId: string | null;
   onClose: () => void;
+  /** Called after a CRM change (stage move etc.) so list views can refresh. */
+  onChanged?: () => void;
+}
+
+interface Detail {
+  business: Business;
+  notes: Note[];
+  activities: Activity[];
+  reminders: Reminder[];
 }
 
 const WEBSITE_QUALITY_LABEL: Record<string, string> = {
@@ -30,30 +40,37 @@ const WEBSITE_QUALITY_LABEL: Record<string, string> = {
   sophisticated: "Sophisticated stack",
 };
 
-export default function BusinessPanel({ businessId, onClose }: Props) {
-  const [business, setBusiness] = useState<Business | null>(null);
+export default function BusinessPanel({ businessId, onClose, onChanged }: Props) {
+  const [detail, setDetail] = useState<Detail | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [version, setVersion] = useState(0);
+
+  // Re-fetch after CRM mutations and notify the parent so lists stay in sync.
+  const reload = useCallback(() => {
+    setVersion((v) => v + 1);
+    onChanged?.();
+  }, [onChanged]);
 
   useEffect(() => {
     if (!businessId) {
-      setBusiness(null);
+      setDetail(null);
       return;
     }
     let cancelled = false;
     setLoading(true);
     setError(null);
-    fetchJson<{ business: Business }>(`/api/businesses/${businessId}`)
-      .then((d) => !cancelled && setBusiness(d.business))
+    fetchJson<Detail>(`/api/businesses/${businessId}`)
+      .then((d) => !cancelled && setDetail(d))
       .catch((e) => !cancelled && setError(e.message))
       .finally(() => !cancelled && setLoading(false));
     return () => {
       cancelled = true;
     };
-  }, [businessId]);
+  }, [businessId, version]);
 
   if (!businessId) return null;
-  const b = business;
+  const b = detail?.business ?? null;
 
   return (
     <aside className="fixed inset-y-0 right-0 z-[60] flex w-full max-w-[440px] flex-col border-l border-slate-800 bg-slate-950 shadow-2xl">
@@ -120,6 +137,18 @@ export default function BusinessPanel({ businessId, onClose }: Props) {
                 </span>{" "}
                 (value × close probability)
               </div>
+            )}
+
+            {/* CRM: stage, notes, reminders, status history */}
+            {detail && b.pipeline_stage && (
+              <CrmSection
+                businessId={b.id}
+                stage={b.pipeline_stage}
+                notes={detail.notes}
+                reminders={detail.reminders}
+                activities={detail.activities}
+                reload={reload}
+              />
             )}
 
             {/* decision maker */}

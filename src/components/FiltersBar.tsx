@@ -3,11 +3,14 @@
 import { useEffect, useRef, useState } from "react";
 import { COVERAGE_CITIES } from "@/lib/config/cities";
 import { INDUSTRIES } from "@/lib/config/industries";
+import { PIPELINE_STAGES } from "@/lib/config/pipeline";
 import type { BusinessFilters } from "@/lib/types";
 
 interface Props {
   value: BusinessFilters;
   onChange: (f: BusinessFilters) => void;
+  /** Show the pipeline-stage filter (Leads page). */
+  showStage?: boolean;
   /** Optional extra controls rendered on the right (e.g. export button). */
   children?: React.ReactNode;
 }
@@ -42,7 +45,7 @@ function Select({
   );
 }
 
-export default function FiltersBar({ value, onChange, children }: Props) {
+export default function FiltersBar({ value, onChange, showStage, children }: Props) {
   // Debounced search box (350 ms) so typing doesn't hammer the API.
   const [qDraft, setQDraft] = useState(value.q ?? "");
   const first = useRef(true);
@@ -142,6 +145,17 @@ export default function FiltersBar({ value, onChange, children }: Props) {
           { value: "250000", label: "$250K+" },
         ]}
       />
+      {showStage && (
+        <Select
+          label="Stage"
+          value={value.stage ?? ""}
+          onChange={(v) => set({ stage: v || undefined })}
+          options={[
+            { value: "active", label: "Active pipeline" },
+            ...PIPELINE_STAGES.map((s) => ({ value: s.slug, label: s.label })),
+          ]}
+        />
+      )}
       <button
         onClick={() => {
           setQDraft("");

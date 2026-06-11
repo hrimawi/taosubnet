@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import BusinessPanel from "@/components/BusinessPanel";
 import FiltersBar from "@/components/FiltersBar";
 import ScoreBadge from "@/components/ScoreBadge";
+import { StageBadge } from "@/components/StageBadge";
 import { fetchJson } from "@/lib/fetcher";
 import { filtersToQuery } from "@/lib/filterParams";
 import { industryLabel } from "@/lib/config/industries";
@@ -25,6 +26,7 @@ const COLUMNS: { key: string; label: string; sort?: string; align?: "right" }[] 
   { key: "employees", label: "Emp.", sort: "employees", align: "right" },
   { key: "revenue", label: "Revenue", sort: "revenue", align: "right" },
   { key: "owner", label: "Decision Maker" },
+  { key: "stage", label: "Stage" },
 ];
 
 export default function LeadsPage() {
@@ -77,7 +79,14 @@ export default function LeadsPage() {
         <h1 className="text-lg font-semibold text-slate-100">All Leads</h1>
         <span className="text-xs text-slate-500">{total.toLocaleString()} businesses match</span>
       </div>
-      <FiltersBar value={filters} onChange={setFilters} />
+      <FiltersBar value={filters} onChange={setFilters} showStage>
+        <a
+          href={`/api/export?${filtersToQuery(filters)}`}
+          className="rounded-md border border-slate-700 px-3 py-1.5 text-xs text-slate-300 hover:bg-slate-800"
+        >
+          ⬇ Export CSV
+        </a>
+      </FiltersBar>
       {error && (
         <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-xs text-amber-200">
           {error}
@@ -145,6 +154,9 @@ export default function LeadsPage() {
                 </td>
                 <td className="max-w-[170px] truncate px-3 py-2 text-slate-400">
                   {b.owner_name ?? <span className="text-slate-600">not found</span>}
+                </td>
+                <td className="px-3 py-2">
+                  <StageBadge stage={b.pipeline_stage} />
                 </td>
               </tr>
             ))}
