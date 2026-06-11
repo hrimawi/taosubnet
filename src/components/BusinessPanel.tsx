@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import AiOutreachSection from "./AiOutreachSection";
 import CrmSection from "./CrmSection";
 import { fetchJson } from "@/lib/fetcher";
 import { industryLabel } from "@/lib/config/industries";
@@ -233,6 +234,9 @@ export default function BusinessPanel({ businessId, onClose, onChanged }: Props)
                 <p className="text-xs text-slate-500">Not scored yet — run the collector.</p>
               )}
             </Section>
+
+            {/* AI prospect summary + outreach copy (generated once, cached) */}
+            <AiOutreachSection businessId={b.id} />
 
             {/* score explanation */}
             {b.score_breakdown && (
