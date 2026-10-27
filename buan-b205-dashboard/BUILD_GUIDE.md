@@ -104,10 +104,10 @@ Test the fit on the **smallest laptop screen anyone on the team has**. Zoom to 1
 ┌──────────────────────────────────────────────────────────────────────────────┐
 │ HEADLINE: one-sentence recommendation                                        │
 │ subtitle: scope · period · "sales include 5% tax"                            │
-├───────────┬───────────┬───────────┬───────────┬──────────────────────────────┤
-│ Q1 sales  │ Purchases │ Avg       │ Sales/day │ Opportunity                  │
-│ $323K     │ 1,000     │ $323      │ $3,629    │ $17K (+5.3%)                 │
-├───────────┴───────────┴───────────┴───────────┼──────────────────────────────┤
+├──────────────────────────┬─────────────────────────┬─────────────────────────┤
+│ Q1 sales                 │ Sales per day           │ Opportunity             │
+│ $323K                    │ $3,629                  │ $17K (+5.3%)            │
+├──────────────────────────┴────────────────────┬────┴─────────────────────────┤
 │  [1] HERO: three small bar charts, one per    │ [2] Size of the prize        │
 │  branch, product lines sorted high→low, the   │   bar: gap $ by branch       │
 │  weak line in the accent color, others gray   │                              │
@@ -119,6 +119,13 @@ Test the fit on the **smallest laptop screen anyone on the team has**. Zoom to 1
 │ Team # · Name (data) · Name (design) · Name (story) · Name · Name            │
 └──────────────────────────────────────────────────────────────────────────────┘
 ```
+
+**KPI tiles:** the Module 4 notes say every KPI should lead to a decision, so keep just three:
+- **Q1 sales** is the baseline;
+- **Sales per day** is the fair pace measure;
+- **Opportunity** is the decision.
+
+Chain-wide purchase count and average purchase don't change what the manager does. Leave them off the dashboard and use them in the Q&A.
 
 **Colors:** one accent color for the three weak departments (and the opportunity bars), and **gray for everything else**. That's two colors in total, well inside "four plus gray." Don't color by branch, since that spends color on decoration.
 
