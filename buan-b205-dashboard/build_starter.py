@@ -1,4 +1,4 @@
-"""Build the B205 Track A starter workbook from the supermarket sales CSV.
+"""Build the B205 Track A starter workbook from the instructor's SuperMarket_Analysis.xlsx.
 
 The workbook holds everything *behind* the dashboard -- the data with helper
 columns, data-quality checks, and formula tables -- so the team can check its
@@ -6,7 +6,7 @@ own PivotTables against it. The Dashboard sheet is left empty on purpose: the
 assignment requires the charts and layout to be built by the team in Excel.
 
 Usage:
-  python build_starter.py <supermarket_sales.csv> <output.xlsx>
+  python build_starter.py <SuperMarket_Analysis.xlsx> <output.xlsx>
 
 Every number on the Checks, Daily and Calc sheets is an Excel formula over the
 Data sheet, so it recalculates if the data changes.
@@ -14,11 +14,9 @@ Data sheet, so it recalculates if the data changes.
 
 from __future__ import annotations
 
-import csv
 import sys
-from datetime import datetime
 
-from openpyxl import Workbook
+from openpyxl import Workbook, load_workbook
 from openpyxl.comments import Comment
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
@@ -29,8 +27,9 @@ N = 1000  # data rows
 LAST = N + 1  # last data row on the Data sheet
 DAYS = 89  # 1 Jan - 30 Mar 2019
 
-BRANCHES = ["A", "B", "C"]
-CITIES = {"A": "Yangon", "B": "Mandalay", "C": "Naypyitaw"}
+# Alphabetical, the order a PivotTable shows them in.
+BRANCHES = ["Alex", "Cairo", "Giza"]
+CITIES = {"Alex": "Yangon", "Cairo": "Mandalay", "Giza": "Naypyitaw"}
 LINES = [
     "Electronic accessories",
     "Fashion accessories",
@@ -59,18 +58,22 @@ UNDER = Border(bottom=THIN)
 
 
 def col(name: str) -> str:
-    """Absolute range of a Data column by header, e.g. col('Total') -> Data!$J$2:$J$1001."""
+    """Absolute range of a Data column by header, e.g. col('Sales') -> Data!$J$2:$J$1001."""
     letter = DATA_COLS[name]
     return f"Data!${letter}$2:${letter}${LAST}"
 
 
 HEADERS = [
     "Invoice ID", "Branch", "City", "Customer type", "Gender", "Product line",
-    "Unit price", "Quantity", "Tax 5%", "Total", "Date", "Time", "Payment",
+    "Unit price", "Quantity", "Tax 5%", "Sales", "Date", "Time", "Payment",
     "cogs", "gross margin percentage", "gross income", "Rating",
 ]
 HELPERS = ["Month", "Month name", "Weekday no", "Weekday", "Hour"]
 DATA_COLS = {h: get_column_letter(i + 1) for i, h in enumerate(HEADERS + HELPERS)}
+
+
+def label(b: str) -> str:
+    return f"{b} ({CITIES[b]})"
 
 
 def style_cell(c, font=BODY, fmt=None, fill=None, align=None, border=None):
@@ -86,8 +89,8 @@ def style_cell(c, font=BODY, fmt=None, fill=None, align=None, border=None):
 
 
 def header_row(ws, row, start_col, labels):
-    for i, label in enumerate(labels):
-        c = ws.cell(row=row, column=start_col + i, value=label)
+    for i, text in enumerate(labels):
+        c = ws.cell(row=row, column=start_col + i, value=text)
         style_cell(c, BOLD, fill=HEAD_FILL, border=UNDER,
                    align=Alignment(horizontal="center" if i else "left", wrap_text=True))
 
@@ -112,17 +115,7 @@ def build_data(wb, rows):
     for i, h in enumerate(HEADERS + HELPERS, start=1):
         ws.cell(row=1, column=i, value=h)
     for r, rec in enumerate(rows, start=2):
-        for i, h in enumerate(HEADERS, start=1):
-            v = rec[h]
-            if h == "Date":
-                v = datetime.strptime(v, "%m/%d/%Y")
-            elif h == "Time":
-                v = datetime.strptime(v, "%H:%M").time()
-            elif h == "Quantity":
-                v = int(v)
-            elif h in ("Unit price", "Tax 5%", "Total", "cogs",
-                       "gross margin percentage", "gross income", "Rating"):
-                v = float(v)
+        for i, v in enumerate(rec, start=1):
             ws.cell(row=r, column=i, value=v)
         d, t = DATA_COLS["Date"], DATA_COLS["Time"]
         ws[f"{DATA_COLS['Month']}{r}"] = f"=MONTH({d}{r})"
@@ -131,7 +124,7 @@ def build_data(wb, rows):
         ws[f"{DATA_COLS['Weekday']}{r}"] = f'=TEXT({d}{r},"ddd")'
         ws[f"{DATA_COLS['Hour']}{r}"] = f"=HOUR({t}{r})"
 
-    fmts = {"Unit price": MONEY2, "Tax 5%": MONEY2, "Total": MONEY2, "cogs": MONEY2,
+    fmts = {"Unit price": MONEY2, "Tax 5%": MONEY2, "Sales": MONEY2, "cogs": MONEY2,
             "gross income": MONEY2, "Date": "yyyy-mm-dd", "Time": "hh:mm",
             "gross margin percentage": "0.000000"}
     for h, letter in DATA_COLS.items():
@@ -144,7 +137,7 @@ def build_data(wb, rows):
     ws.column_dimensions[DATA_COLS["Product line"]].width = 22
 
     end = get_column_letter(len(HEADERS) + len(HELPERS))
-    table = Table(displayName="Sales", ref=f"A1:{end}{LAST}")
+    table = Table(displayName="SalesData", ref=f"A1:{end}{LAST}")
     table.tableStyleInfo = TableStyleInfo(name="TableStyleLight1", showRowStripes=True)
     ws.add_table(table)
     ws.freeze_panes = "B2"
@@ -162,8 +155,9 @@ def build_checks(wb):
                    "worth disclosing on the dashboard.")
     header_row(ws, 4, 1, ["Check", "Result", "Expected / what it means"])
 
-    total, tax, cogs = col("Total"), col("Tax 5%"), col("cogs")
+    sales, tax, cogs = col("Sales"), col("Tax 5%"), col("cogs")
     price, qty, date = col("Unit price"), col("Quantity"), col("Date")
+    pairs = ", ".join(f"{b} = {c}" for b, c in CITIES.items())
     checks = [
         ("Rows (purchases)", f"=COUNTA({col('Invoice ID')})", INT, "1,000", False),
         ("Blank cells in the 17 original columns", f"=COUNTBLANK(Data!$A$2:$Q${LAST})", INT,
@@ -193,16 +187,17 @@ def build_checks(wb):
         ("Rows where 'cogs' differs from Unit price x Quantity",
          f"=SUMPRODUCT(--(ABS({cogs}-{price}*{qty})>0.0001))", INT,
          "0 -- 'cogs' is pre-tax revenue, not cost of goods sold. The file has no real cost data", True),
-        ("Rows where Total differs from cogs + Tax 5%",
-         f"=SUMPRODUCT(--(ABS({total}-{cogs}-{tax})>0.0001))", INT,
-         "0 -- Total = sales including 5% tax. Use Total for every sales figure", False),
+        ("Rows where Sales differs from cogs + Tax 5%",
+         f"=SUMPRODUCT(--(ABS({sales}-{cogs}-{tax})>0.0001))", INT,
+         "0 -- Sales includes the 5% tax. Use Sales for every sales figure", False),
         ("Rows where Branch and City disagree",
          "=" + "+".join(f'COUNTIFS({col("Branch")},"{b}",{col("City")},"<>{c}")'
                         for b, c in CITIES.items()), INT,
-         "0 -- A = Yangon, B = Mandalay, C = Naypyitaw, one-to-one", False),
+         f"0 -- one-to-one ({pairs}). But the branch names are Egyptian cities and the City column "
+         "holds Myanmar cities: pick one naming and use it consistently on the dashboard", True),
     ]
-    for i, (label, formula, fmt, expect, flag) in enumerate(checks, start=5):
-        ws.cell(row=i, column=1, value=label)
+    for i, (text, formula, fmt, expect, flag) in enumerate(checks, start=5):
+        ws.cell(row=i, column=1, value=text)
         ws.cell(row=i, column=2, value=formula)
         ws.cell(row=i, column=3, value=expect)
         for c in range(1, 4):
@@ -225,7 +220,7 @@ def build_daily(wb):
         ws[f"A{r}"] = f"=MIN({col('Date')})" if i == 0 else f"=A{r - 1}+1"
         ws[f"B{r}"] = f"=MONTH(A{r})"
         ws[f"C{r}"] = f'=TEXT(A{r},"ddd")'
-        ws[f"D{r}"] = f"=SUMIFS({col('Total')},{col('Date')},A{r})"
+        ws[f"D{r}"] = f"=SUMIFS({col('Sales')},{col('Date')},A{r})"
         ws[f"E{r}"] = f"=COUNTIFS({col('Date')},A{r})"
         for c, fmt in zip("ABCDE", ("yyyy-mm-dd", "0", None, MONEY, INT)):
             style_cell(ws[f"{c}{r}"], BODY, fmt)
@@ -241,7 +236,7 @@ def build_daily(wb):
 
 def build_calc(wb):
     ws = wb.create_sheet("Calc")
-    total, branch, line = col("Total"), col("Branch"), col("Product line")
+    sales, branch, line = col("Sales"), col("Branch"), col("Product line")
     ws["A1"] = "Calc -- formula versions of the numbers on the dashboard"
     style_cell(ws["A1"], TITLE)
     note(ws, "A2", "Build your own PivotTable for each block and check it matches. If a number here and "
@@ -251,27 +246,27 @@ def build_calc(wb):
     ws["A4"] = "1. Quarter at a glance (Q1 2019, 1 Jan - 30 Mar)"
     style_cell(ws["A4"], H2)
     kpis = [
-        ("Total sales (incl. 5% tax)", f"=SUM({total})", MONEY),
+        ("Total sales (incl. 5% tax)", f"=SUM({sales})", MONEY),
         ("Purchases", f"=COUNTA({col('Invoice ID')})", INT),
         ("Average purchase", "=B5/B6", MONEY2),
         ("Trading days", f"=COUNT(Daily!$A$2:$A${DAYS + 1})", INT),
         ("Sales per day", "=B5/B8", MONEY),
     ]
-    for i, (label, formula, fmt) in enumerate(kpis, start=5):
-        ws[f"A{i}"], ws[f"B{i}"] = label, formula
+    for i, (text, formula, fmt) in enumerate(kpis, start=5):
+        ws[f"A{i}"], ws[f"B{i}"] = text, formula
         style_cell(ws[f"A{i}"])
         style_cell(ws[f"B{i}"], BODY, fmt)
-    note(ws, "C5", "Pivot check: Values = Sum of Total, no rows -> grand total.")
+    note(ws, "C5", "Pivot check: Values = Sum of Sales, no rows -> grand total.")
 
     # 2. Product line x branch
     ws["A11"] = "2. Sales by product line and branch -- the core finding"
     style_cell(ws["A11"], H2)
-    header_row(ws, 12, 1, ["Product line"] + [f"{b} ({CITIES[b]})" for b in BRANCHES] + ["Chain"])
+    header_row(ws, 12, 1, ["Product line"] + [label(b) for b in BRANCHES] + ["Chain"])
     for i, pl in enumerate(LINES, start=13):
         ws[f"A{i}"] = pl
         style_cell(ws[f"A{i}"])
         for j, b in enumerate(BRANCHES):
-            c = ws.cell(row=i, column=2 + j, value=f'=SUMIFS({total},{line},$A{i},{branch},"{b}")')
+            c = ws.cell(row=i, column=2 + j, value=f'=SUMIFS({sales},{line},$A{i},{branch},"{b}")')
             style_cell(c, BODY, MONEY)
         style_cell(ws.cell(row=i, column=5, value=f"=SUM(B{i}:D{i})"), BODY, MONEY)
     ws["A19"] = "Branch total"
@@ -280,7 +275,7 @@ def build_calc(wb):
         letter = get_column_letter(2 + j)
         style_cell(ws[f"{letter}19"], BOLD, MONEY)
         ws[f"{letter}19"] = f"=SUM({letter}13:{letter}18)"
-    note(ws, "A20", "Pivot check: Rows = Product line, Columns = Branch, Values = Sum of Total. "
+    note(ws, "A20", "Pivot check: Rows = Product line, Columns = Branch, Values = Sum of Sales. "
                     "At chain level every line is 15-17% of sales -- the gap only shows by branch.")
 
     header_row(ws, 22, 1, ["Purchases"] + BRANCHES)
@@ -296,7 +291,7 @@ def build_calc(wb):
             src = get_column_letter(2 + j)
             a = ws.cell(row=i, column=7 + j, value=f"={src}{i - 10}/{src}{i}")
             style_cell(a, BODY, MONEY2)
-    note(ws, "A29", "Pivot check: same pivot, Values = Count of Invoice ID, then Average of Total.")
+    note(ws, "A29", "Pivot check: same pivot, Values = Count of Invoice ID, then Average of Sales.")
 
     # 3. Each branch's weakest line vs its sister branches
     ws["A31"] = "3. Each branch's weakest line, against the average of its two sister branches"
@@ -306,11 +301,11 @@ def build_calc(wb):
     for k, b in enumerate(BRANCHES):
         r = 33 + k
         bc = get_column_letter(2 + k)  # this branch's column in block 2
-        sales = f"${bc}$13:${bc}$18"
-        pos = f"MATCH(MIN({sales}),{sales},0)"
-        ws[f"A{r}"] = f"{b} ({CITIES[b]})"
+        rng = f"${bc}$13:${bc}$18"
+        pos = f"MATCH(MIN({rng}),{rng},0)"
+        ws[f"A{r}"] = label(b)
         ws[f"B{r}"] = f"=INDEX($A$13:$A$18,{pos})"
-        ws[f"C{r}"] = f"=MIN({sales})"
+        ws[f"C{r}"] = f"=MIN({rng})"
         ws[f"D{r}"] = f"=(INDEX($E$13:$E$18,{pos})-C{r})/2"
         ws[f"E{r}"] = f"=D{r}-C{r}"
         cnt = f"${bc}$23:${bc}$28"
@@ -337,16 +332,16 @@ def build_calc(wb):
     for k, b in enumerate(BRANCHES):
         c0 = 1 + 3 * k
         bc = get_column_letter(2 + k)
-        sales = f"${bc}$13:${bc}$18"
-        header_row(ws, 41, c0, [f"{b} ({CITIES[b]})", "Sales"])
+        rng = f"${bc}$13:${bc}$18"
+        header_row(ws, 41, c0, [label(b), "Sales"])
         for rank in range(1, 7):
             r = 41 + rank
-            v = ws.cell(row=r, column=c0 + 1, value=f"=LARGE({sales},{rank})")
+            v = ws.cell(row=r, column=c0 + 1, value=f"=LARGE({rng},{rank})")
             name_col = get_column_letter(c0 + 1)
-            n = ws.cell(row=r, column=c0, value=f"=INDEX($A$13:$A$18,MATCH({name_col}{r},{sales},0))")
+            n = ws.cell(row=r, column=c0, value=f"=INDEX($A$13:$A$18,MATCH({name_col}{r},{rng},0))")
             style_cell(v, BODY, MONEY)
             style_cell(n)
-    note(ws, "A48", "In a PivotTable: Rows = Product line, filter Branch, Values = Sum of Total, "
+    note(ws, "A48", "In a PivotTable: Rows = Product line, filter Branch, Values = Sum of Sales, "
                     "then sort Largest to Smallest.")
 
     # 5. Months, compared per day
@@ -356,7 +351,7 @@ def build_calc(wb):
                            "vs previous month"])
     for i, (m, name) in enumerate(MONTHS, start=52):
         ws[f"A{i}"] = name
-        ws[f"B{i}"] = f"=SUMIFS({total},{col('Month')},{m})"
+        ws[f"B{i}"] = f"=SUMIFS({sales},{col('Month')},{m})"
         ws[f"C{i}"] = f"=COUNTIF(Daily!$B$2:$B${DAYS + 1},{m})"
         ws[f"D{i}"] = f"=B{i}/C{i}"
         ws[f"E{i}"] = f"=COUNTIFS({col('Month')},{m})/C{i}"
@@ -372,7 +367,7 @@ def build_calc(wb):
     header_row(ws, 58, 1, ["Weekday", "Sales", "Days", "Sales per day", "Purchases per day"])
     for i, d in enumerate(WEEKDAYS, start=59):
         ws[f"A{i}"] = d
-        ws[f"B{i}"] = f'=SUMIFS({total},{col("Weekday")},A{i})'
+        ws[f"B{i}"] = f'=SUMIFS({sales},{col("Weekday")},A{i})'
         ws[f"C{i}"] = f"=COUNTIF(Daily!$C$2:$C${DAYS + 1},A{i})"
         ws[f"D{i}"] = f"=B{i}/C{i}"
         ws[f"E{i}"] = f'=COUNTIFS({col("Weekday")},A{i})/C{i}'
@@ -385,7 +380,7 @@ def build_calc(wb):
     header_row(ws, 68, 1, ["Hour starting", "Sales", "Purchases", "Sales per day"])
     for i, h in enumerate(range(10, 21), start=69):
         ws[f"A{i}"] = h
-        ws[f"B{i}"] = f"=SUMIFS({total},{col('Hour')},A{i})"
+        ws[f"B{i}"] = f"=SUMIFS({sales},{col('Hour')},A{i})"
         ws[f"C{i}"] = f"=COUNTIFS({col('Hour')},A{i})"
         ws[f"D{i}"] = f"=B{i}/$B$8"
         for c, fmt in zip("ABCD", ('0":00"', MONEY, INT, MONEY)):
@@ -396,11 +391,19 @@ def build_calc(wb):
         ws.column_dimensions[letter].width = w
 
 
+def read_rows(src: str) -> list[tuple]:
+    ws = load_workbook(src, read_only=True, data_only=True).worksheets[0]
+    rows = list(ws.iter_rows(values_only=True))
+    if list(rows[0]) != HEADERS:
+        raise SystemExit(f"unexpected headers: {rows[0]}")
+    data = [r for r in rows[1:] if any(v is not None for v in r)]
+    if len(data) != N:
+        raise SystemExit(f"expected {N} rows, got {len(data)}")
+    return data
+
+
 def main(src: str, out: str) -> None:
-    with open(src, newline="", encoding="utf-8") as f:
-        rows = list(csv.DictReader(f))
-    if len(rows) != N:
-        raise SystemExit(f"expected {N} rows, got {len(rows)}")
+    rows = read_rows(src)
     wb = Workbook()
     build_dashboard(wb)
     build_data(wb, rows)
