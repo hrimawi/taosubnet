@@ -92,7 +92,7 @@ Pick one and make it yours. It must be one sentence that someone could act on Mo
 2. "Each branch loses about $5–6K a quarter in one department its sister branches sell well. Copy their playbook in those three departments for +$17K (5%)."
 3. "Don't push one product line chain-wide. Pilot each branch's weakest department, copying the sister branch that leads it, worth $17K a quarter."
 
-A subtitle under the headline can carry the scope: *"Supermarket chain · 3 similar-sized branches ($106K–$111K each) · 1,000 purchases · 1 Jan–30 Mar 2019 · sales include 5% tax."* The branch sizes show the comparison is fair: the branches are within 4% of each other, so their department sales can be compared directly.
+A subtitle under the headline can carry the scope: *"Supermarket chain · 3 similar-sized branches ($106K–$111K each) · 1,000 purchases · 1 Jan–30 Mar 2019 · sales include 5% tax."* The branch sizes show the comparison is fair: the largest branch is only about 4% bigger than the smallest, so their department sales can be compared directly.
 
 ---
 
