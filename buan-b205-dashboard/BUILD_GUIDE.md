@@ -137,19 +137,29 @@ Chain-wide purchase count and average purchase don't change what the manager doe
 
 Every chart is drawn by you, in Excel. These are the settings that earn the Chart-choice and Design points.
 
+**Fastest route (about an hour in total).** Every chart's data is already a ready-made formula range on the Calc sheet, so each chart is: select the range → Insert → format.
+
+| Chart | Select on Calc |
+|---|---|
+| [1] Alex / Cairo / Giza | A41:B47 / D41:E47 / G41:H47 |
+| [2] Size of the prize | K32:L35 |
+| [3] Sales per day by month | A51:A54, then Ctrl + D51:D54 |
+
+Then build just **two PivotTables** to prove the numbers:
+- **Product line × Branch, Sum of Sales.** This checks charts [1] and [2].
+- **Month, Sum of Sales.** This checks chart [3].
+
 ### [1] Hero: one small bar chart per branch (comparison)
-- **PivotTable** (one per branch):
-  - Rows = Product line
-  - Values = Sum of Sales
-  - Filter = Branch
-  - Sort Largest → Smallest
-  - Calc block 4 shows the sorted order to expect.
+- **Source:** Calc A41:B47 (Alex), D41:E47 (Cairo), G41:H47 (Giza), already sorted largest first. A PivotTable per branch also works:
+  - Rows = Product line, Values = Sum of Sales, Filter = Branch, sorted Largest → Smallest;
+  - hide its field buttons (PivotChart Analyze → Field Buttons → Hide All).
 - **Chart:** clustered **bar** (horizontal), since the product-line names are long.
 - Excel draws horizontal bars bottom-up. To put the biggest bar on top: Format Axis → *Categories in reverse order*.
 - **Same scale on all three:** Format Axis → Bounds → Minimum **0**, Maximum **30,000**. Without this, the three charts look comparable when they aren't, which is a dishonest axis.
 - Color all bars gray. Then click the weak bar **twice**, so only that point is selected, and set Format Data Point → Fill → accent color.
+- **Format once, copy twice.** The weak bar is always the **last** (smallest) bar in every branch. So after you finish the Alex chart, copy it, select each new chart, and use Home → Paste → Paste Special → Formats. The highlight lands on the right bar. If it doesn't, recolor it by hand.
 - **Remove clutter:**
-  - legend, gridlines and the PivotChart field buttons (PivotChart Analyze → Field Buttons → Hide All);
+  - legend and gridlines;
   - add data labels in $K.
 - **Title = finding, not label.** Examples:
   - *"Alex: Health & beauty trails — $12.6K vs $18.3K at sister branches"*
@@ -157,9 +167,8 @@ Every chart is drawn by you, in Excel. These are the settings that earn the Char
   - *"Giza: Home & lifestyle trails — $13.9K vs $20.0K"*
 
 ### [2] Size of the prize (comparison)
-- **Source:** Calc block 3, column E (Gap $). This is formula-traceable, which the brief allows. A small sorted table on its own sheet keeps the bars in order (step-by-step below).
-- **Chart:** horizontal bar, 3 bars sorted largest first, starting at **0**, all in the accent color.
-- **Label each bar** "Giza – Home & lifestyle" etc.
+- **Source:** Calc K32:L35. It holds the three gaps from block 3, already labelled ("Giza – Home and lifestyle" etc.) and sorted largest first. It's formula-traceable, which the brief allows.
+- **Chart:** horizontal bar, 3 bars sorted largest first, starting at **0**, all in the accent color. Tick *Categories in reverse order* so the largest is on top.
 - **Title:** *"Closing the three gaps is worth $17K a quarter (+5.3%)"*
 
 ### [3] Sales per day by month (trend, done fairly)

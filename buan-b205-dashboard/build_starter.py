@@ -326,6 +326,18 @@ def build_calc(wb):
     note(ws, "A38", "Gap = what the branch would have sold in that line had it matched the average of the "
                     "other two branches. A conservative target: matching the best sister branch is larger.")
 
+    # The same gaps, labelled and sorted largest first, ready for the size-of-the-prize chart
+    header_row(ws, 32, 10, ["Label", "Branch – weakest line (sorted)", "Gap ($)"])
+    for k, b in enumerate(BRANCHES):
+        r = 33 + k
+        ws[f"J{r}"] = f'="{b} – "&B{r}'
+        ws[f"L{r}"] = f"=LARGE($E$33:$E$35,{k + 1})"
+        ws[f"K{r}"] = f"=INDEX($J$33:$J$35,MATCH(L{r},$E$33:$E$35,0))"
+        style_cell(ws[f"J{r}"])
+        style_cell(ws[f"K{r}"])
+        style_cell(ws[f"L{r}"], BODY, MONEY)
+    note(ws, "K36", "Ready to chart: select K32:L35, then Insert -> Bar -> Clustered Bar.")
+
     # 4. Each branch's lines sorted high to low (for one small bar chart per branch)
     ws["A40"] = "4. Each branch's product lines, sorted high to low (one small bar chart per branch)"
     style_cell(ws["A40"], H2)
@@ -386,7 +398,8 @@ def build_calc(wb):
         for c, fmt in zip("ABCD", ('0":00"', MONEY, INT, MONEY)):
             style_cell(ws[f"{c}{i}"], BODY, fmt)
 
-    widths = {"A": 26, "B": 22, "C": 14, "D": 22, "E": 14, "F": 22, "G": 18, "H": 14, "I": 18}
+    widths = {"A": 26, "B": 22, "C": 14, "D": 22, "E": 14, "F": 22, "G": 18, "H": 14, "I": 18,
+              "J": 28, "K": 30, "L": 12}
     for letter, w in widths.items():
         ws.column_dimensions[letter].width = w
 
