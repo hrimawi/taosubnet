@@ -92,7 +92,7 @@ Pick one and make it yours. It must be one sentence that someone could act on Mo
 2. "Each branch loses about $5–6K a quarter in one department its sister branches sell well. Copy their playbook in those three departments for +$17K (5%)."
 3. "Don't push one product line chain-wide. Pilot each branch's weakest department, copying the sister branch that leads it, worth $17K a quarter."
 
-A subtitle under the headline can carry the scope: *"Supermarket chain, 3 branches, 1,000 purchases, 1 Jan–30 Mar 2019. Sales include 5% tax."*
+A subtitle under the headline can carry the scope: *"Supermarket chain · 3 similar-sized branches ($106K–$111K each) · 1,000 purchases · 1 Jan–30 Mar 2019 · sales include 5% tax."* The branch sizes show the comparison is fair: the branches are within 4% of each other, so their department sales can be compared directly.
 
 ---
 
@@ -155,7 +155,9 @@ Then build just **two PivotTables** to prove the numbers:
   - hide its field buttons (PivotChart Analyze → Field Buttons → Hide All).
 - **Chart:** clustered **bar** (horizontal), since the product-line names are long.
 - Excel draws horizontal bars bottom-up. To put the biggest bar on top: Format Axis → *Categories in reverse order*.
-- **Same scale on all three:** Format Axis → Bounds → Minimum **0**, Maximum **30,000**. Without this, the three charts look comparable when they aren't, which is a dishonest axis.
+- Reversing moves the dollar axis to the top. To keep it at the bottom, set *Horizontal axis crosses → At maximum category* in the same pane.
+- **Same scale on all three:** Format Axis → Bounds → Minimum **0**, Maximum **30,000**, Major unit **10,000**. Without this, the three charts look comparable when they aren't, which is a dishonest axis.
+- **Keep the dollar axis visible and give it a title** (for example "Q1 sales ($)"), because the checklist says every axis is labelled. Number format: `$#,##0,"K"`.
 - Color all bars gray. Then click the weak bar **twice**, so only that point is selected, and set Format Data Point → Fill → accent color.
 - **Format once, copy twice.** The weak bar is always the **last** (smallest) bar in every branch. So after you finish the Alex chart, copy it, select each new chart, and use Home → Paste → Paste Special → Formats. The highlight lands on the right bar. If it doesn't, recolor it by hand.
 - **Remove clutter:**
@@ -190,7 +192,9 @@ Then build just **two PivotTables** to prove the numbers:
 ## 5. Limitation and data note (draft text for the dashboard footer)
 
 **Limitation (pick one; the first is strongest):**
-> *Limitation: one quarter of data (1 Jan–30 Mar 2019) with only ~50 purchases per branch-department, so part of each gap may be chance — run it as a pilot and re-check after six weeks.*
+> *Limitation: one quarter of data (1 Jan–30 Mar 2019) with only 45–66 purchases per branch-department, so part of each gap may be chance — run it as a pilot and re-check after six weeks.*
+
+(The 45–66 range traces to the purchase counts in Calc B23:D28.)
 
 Alternatives:
 - *"The file has no cost data, so this targets sales, not profit."*
